@@ -3341,9 +3341,13 @@ M.is_floating_window()                         *avante-utils.is_floating_window*
 Curl wrapper                                                 *avante-utils-curl*
 
 
- HTTP GET/POST requests using curl. Headers and auth are read from private files,
- and the request body is sent through stdin, keeping secrets off the command line.
- Temporary files are removed when the process exits.
+ HTTP GET/POST requests using curl. URLs, headers, auth and proxies are passed
+ as command-line arguments. The request body is sent through stdin.
+ Requests do not follow redirects or load the default curl config.
+ Requests time out after 30 seconds unless opts.timeout overrides the limit.
+ Async processes still running one second after timeout are killed.
+ URLs, header names and values, auth and proxies must not contain NUL, CR or LF.
+ Response bodies are returned unchanged.
 
 
 avante.utils.curl.Response                          *avante.utils.curl.Response*
@@ -3362,19 +3366,13 @@ avante.utils.curl.Error                                *avante.utils.curl.Error*
         {exit}     (integer)
 
 
-avante.utils.curl.Job : vim.SystemObj                    *avante.utils.curl.Job*
-
-    Fields: ~
-        {wait}  (fun(self:avante.utils.curl.Job,timeout?:integer):avante.utils.curl.Job)
-
-
 avante.utils.curl.Options                            *avante.utils.curl.Options*
 
     Fields: ~
         {headers?}   (table<string,string>)
         {body?}      (string)
         {auth?}      (string)
-        {timeout?}   (integer)
+        {timeout?}   (integer)                                   Timeout in milliseconds (default: 30000)
         {proxy?}     (string)
         {insecure?}  (boolean)
         {callback?}  (fun(response:avante.utils.curl.Response))
@@ -3388,8 +3386,7 @@ M.get({url}, {opts?})                                    *avante-utils-curl.get*
         {opts?}  (avante.utils.curl.Options)
 
     Returns: ~
-        (avante.utils.curl.Response|avante.utils.curl.Job)
-        (fun())                                             cleanup
+        (avante.utils.curl.Response|vim.SystemObj)
 
 
 M.post({url}, {opts?})                                  *avante-utils-curl.post*
@@ -3399,8 +3396,7 @@ M.post({url}, {opts?})                                  *avante-utils-curl.post*
         {opts?}  (avante.utils.curl.Options)
 
     Returns: ~
-        (avante.utils.curl.Response|avante.utils.curl.Job)
-        (fun())                                             cleanup
+        (avante.utils.curl.Response|vim.SystemObj)
 
 
 ==============================================================================

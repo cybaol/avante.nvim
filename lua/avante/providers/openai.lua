@@ -79,7 +79,9 @@ function M:list_models(timeout)
     timeout = timeout,
   })
   if response.status ~= 200 then
-    Utils.error("Failed to fetch OpenAI-compatible models: " .. (response.body or response.status))
+    Utils.error(
+      string.format("Failed to fetch OpenAI-compatible models (HTTP %d): %s", response.status, response.body)
+    )
     return {}
   end
 

@@ -34,6 +34,7 @@ local curl_errors = {
   [52] = "Server returned empty response",
   [56] = "Failure in receiving network data",
   [60] = "Peer certificate cannot be authenticated with known CA certificates (SSL cert issue)",
+  [124] = "Operation timed out",
 }
 
 ---@param opts AvanteProviderFunctor
@@ -49,16 +50,17 @@ local function query_models(opts, timeout)
       ["Content-Type"] = "application/json",
       ["Accept"] = "application/json",
     }, opts.extra_headers),
+    timeout = timeout or 30000,
     callback = function(output) response = output end,
     on_error = function(err) response = { exit = err.exit } end,
   })
-  local job_ok, err = pcall(job.wait, job, timeout or 10000)
+  local job_ok, err = pcall(job.wait, job, timeout or 30000)
   if not job_ok then
     return nil, "Ollama: curl command invocation failed: " .. err
   elseif response.exit ~= 0 then
     return nil, "Ollama: " .. (curl_errors[response.exit] or ("curl returned error: " .. response.exit))
   elseif response.status ~= 200 then
-    return nil, "Failed to fetch Ollama models: " .. (response.body or response.status)
+    return nil, string.format("Failed to fetch Ollama models (HTTP %d): %s", response.status, response.body)
   end
 
   local ok, body = pcall(vim.json.decode, response.body)
